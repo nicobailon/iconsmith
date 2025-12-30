@@ -1,0 +1,110 @@
+name: IconSmith
+options:
+  bundleIdPrefix: com.nicobailon
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "16.0"
+  developmentLanguage: en
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    ENABLE_HARDENED_RUNTIME: YES
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""
+
+targets:
+  IconSmith:
+    type: application
+    platform: macOS
+    sources:
+      - path: IconSmith
+        excludes:
+          - "**/.DS_Store"
+      - path: Shared
+        excludes:
+          - "**/.DS_Store"
+    resources:
+      - path: IconSmith/Resources/Assets.xcassets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.nicobailon.IconSmith
+        INFOPLIST_FILE: IconSmith/Info.plist
+        PRODUCT_NAME: IconSmith
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        COMBINE_HIDPI_IMAGES: YES
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
+    info:
+      path: IconSmith/Info.plist
+      properties:
+        CFBundleDisplayName: IconSmith
+        CFBundleName: IconSmith
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        LSMinimumSystemVersion: "$(MACOSX_DEPLOYMENT_TARGET)"
+        CFBundleURLTypes:
+          - CFBundleURLName: IconSmith
+            CFBundleURLSchemes:
+              - iconsmith
+        NSHumanReadableCopyright: "Copyright 2024. All rights reserved."
+        LSApplicationCategoryType: public.app-category.utilities
+    entitlements:
+      path: IconSmith/IconSmith.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.application-groups:
+          - group.com.nicobailon.IconSmith
+
+  IconSmithFinder:
+    type: app-extension
+    platform: macOS
+    product: com.apple.product-type.finder-sync-extension
+    sources:
+      - path: IconSmithFinder
+        excludes:
+          - "**/.DS_Store"
+      - path: Shared
+        excludes:
+          - "**/.DS_Store"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.nicobailon.IconSmith.FinderSync
+        INFOPLIST_FILE: IconSmithFinder/Info.plist
+        PRODUCT_NAME: IconSmithFinder
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks"
+        SKIP_INSTALL: YES
+    info:
+      path: IconSmithFinder/Info.plist
+      properties:
+        CFBundleDisplayName: IconSmith Finder
+        CFBundleName: IconSmithFinder
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        LSMinimumSystemVersion: "$(MACOSX_DEPLOYMENT_TARGET)"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.FinderSync
+          NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).FinderSync"
+    entitlements:
+      path: IconSmithFinder/IconSmithFinder.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.application-groups:
+          - group.com.nicobailon.IconSmith
+    dependencies:
+      - target: IconSmith
+        embed: false
+
+schemes:
+  IconSmith:
+    build:
+      targets:
+        IconSmith: all
+        IconSmithFinder: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    archive:
+      config: Release
