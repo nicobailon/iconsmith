@@ -41,8 +41,7 @@ class FinderSync: FIFinderSync {
                     keyEquivalent: ""
                 )
                 item.representedObject = icon.id.uuidString
-                if let thumbnailPath = icon.thumbnailPath,
-                   let thumbnail = NSImage(contentsOfFile: thumbnailPath) {
+                if let thumbnail = NSImage(contentsOfFile: icon.thumbnailPath) {
                     item.image = thumbnail
                     item.image?.size = NSSize(width: 16, height: 16)
                 }
@@ -86,14 +85,14 @@ class FinderSync: FIFinderSync {
         applyIcon(id: iconID, to: items)
     }
     
-    private func loadRecentIcons() -> [RecentIcon] {
+    private func loadRecentIcons() -> [RecentIconData] {
         guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: sharedContainerID) else {
             return []
         }
         
         let recentFile = containerURL.appendingPathComponent("recent-icons.json")
         guard let data = try? Data(contentsOf: recentFile),
-              let recent = try? JSONDecoder().decode([RecentIcon].self, from: data) else {
+              let recent = try? JSONDecoder().decode([RecentIconData].self, from: data) else {
             return []
         }
         
@@ -132,8 +131,4 @@ class FinderSync: FIFinderSync {
     }
 }
 
-struct RecentIcon: Codable {
-    let id: UUID
-    let name: String
-    let thumbnailPath: String?
-}
+

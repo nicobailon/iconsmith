@@ -140,27 +140,30 @@ final class AppState: ObservableObject {
         
         try? FileManager.default.createDirectory(at: containerURL.appendingPathComponent("Icons"), withIntermediateDirectories: true)
         
-        if let image = icon.image, let pngData = ICNSConverter.pngData(from: image) {
-            let iconPath = containerURL.appendingPathComponent("Icons/\(iconID.uuidString).png")
-            try? pngData.write(to: iconPath)
-        }
+        let iconPath = containerURL.appendingPathComponent("Icons/\(iconID.uuidString).png")
         
-        updateRecentIconsFile(icon: icon, containerURL: containerURL)
+        if let image = icon.image, let pngData = ICNSConverter.pngData(from: image) {
+            do {
+                try pngData.write(to: iconPath)
+                updateRecentIconsFile(icon: icon, iconPath: iconPath, containerURL: containerURL)
+            } catch {
+                return
+            }
+        }
     }
     
-    private func updateRecentIconsFile(icon: IconFile, containerURL: URL) {
+    private func updateRecentIconsFile(icon: IconFile, iconPath: URL, containerURL: URL) {
         let recentFile = containerURL.appendingPathComponent("recent-icons.json")
-        var recentIcons: [RecentIconEntry] = []
+        var recentIcons: [RecentIconData] = []
         
         if let data = try? Data(contentsOf: recentFile),
-           let existing = try? JSONDecoder().decode([RecentIconEntry].self, from: data) {
+           let existing = try? JSONDecoder().decode([RecentIconData].self, from: data) {
             recentIcons = existing
         }
         
         recentIcons.removeAll { $0.id == icon.id }
         
-        let iconPath = containerURL.appendingPathComponent("Icons/\(icon.id.uuidString).png")
-        let entry = RecentIconEntry(id: icon.id, name: icon.name, thumbnailPath: iconPath.path)
+        let entry = RecentIconData(id: icon.id, name: icon.name, thumbnailPath: iconPath.path)
         recentIcons.insert(entry, at: 0)
         
         if recentIcons.count > 10 {
@@ -173,11 +176,22 @@ final class AppState: ObservableObject {
     }
 }
 
-struct RecentIconEntry: Codable {
-    let id: UUID
-    let name: String
-    let thumbnailPath: String
-    
+struct OperationProgress {
+    let operation: String
+    var current: Int
+    var total: Int
+    var isCancelled: Bool = false
+}
+
+struct InconsistencyInfo {
+    let fileExtension: String
+    let totalFiles: Int
+    let differentIconCount: Int
+    let dominantIcon: NSImage?
+    let outlierFiles: [FileTypeInfo]
+}
+
+extension AppState {
     func detectInconsistencies(in files: [FileTypeInfo]) -> [InconsistencyInfo] {
         var results: [InconsistencyInfo] = []
         
@@ -205,24 +219,7 @@ struct RecentIconEntry: Codable {
         
         return results
     }
-}
-
-struct OperationProgress {
-    let operation: String
-    var current: Int
-    var total: Int
-    var isCancelled: Bool = false
-}
-
-struct InconsistencyInfo {
-    let fileExtension: String
-    let totalFiles: Int
-    let differentIconCount: Int
-    let dominantIcon: NSImage?
-    let outlierFiles: [FileTypeInfo]
-}
-
-extension AppState {
+    
     func fixInconsistency(_ info: InconsistencyInfo) {
         guard let icon = info.dominantIcon else { return }
         let urls = info.outlierFiles.map { $0.url }
