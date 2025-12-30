@@ -76,7 +76,8 @@ struct IconSmithApp: App {
         switch url.host {
         case "apply":
             if let query = url.query,
-               let filesParam = query.components(separatedBy: "=").last {
+               query.hasPrefix("files=") {
+                let filesParam = String(query.dropFirst("files=".count))
                 let files = filesParam.components(separatedBy: ",")
                     .compactMap { $0.removingPercentEncoding }
                     .compactMap { URL(string: $0) }

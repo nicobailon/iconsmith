@@ -60,7 +60,7 @@ class FinderSync: FIFinderSync {
         guard let items = FIFinderSyncController.default().selectedItemURLs() else { return }
         
         var allowed = CharacterSet.urlQueryAllowed
-        allowed.remove(charactersIn: ",")
+        allowed.remove(charactersIn: ",=&")
         
         let encodedURLs = items
             .map { $0.absoluteString.addingPercentEncoding(withAllowedCharacters: allowed) ?? "" }
