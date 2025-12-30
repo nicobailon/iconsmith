@@ -80,6 +80,8 @@ final class IconUndoManager: ObservableObject {
             NSWorkspace.shared.setIcon(nil, forFile: fileURL.path, options: [])
         }
         
+        removeIconSmithMarker(from: fileURL)
+        
         if let iconPath = entry.originalIconPath {
             try? FileManager.default.removeItem(atPath: iconPath)
         }
@@ -89,6 +91,13 @@ final class IconUndoManager: ObservableObject {
         canUndo = !undoStack.isEmpty
         
         return true
+    }
+    
+    private func removeIconSmithMarker(from fileURL: URL) {
+        fileURL.withUnsafeFileSystemRepresentation { path in
+            guard let path = path else { return }
+            _ = removexattr(path, "com.iconsmith.applied", 0)
+        }
     }
     
     func clearHistory() {

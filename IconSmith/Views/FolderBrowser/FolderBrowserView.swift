@@ -5,7 +5,6 @@ struct FolderBrowserView: View {
     @State private var selectedFolder: ScanFolder?
     @State private var scannedFiles: [FileTypeInfo] = []
     @State private var isScanning = false
-    @State private var scanCount = 0
     
     var body: some View {
         HSplitView {
@@ -80,10 +79,7 @@ struct FolderBrowserView: View {
     
     private func scanFolder(_ folder: ScanFolder) async {
         isScanning = true
-        scanCount = 0
-        scannedFiles = await appState.folderScanService.scanFolder(folder.path) { count in
-            scanCount = count
-        }
+        scannedFiles = await appState.folderScanService.scanFolder(folder.path) { _ in }
         isScanning = false
     }
 }

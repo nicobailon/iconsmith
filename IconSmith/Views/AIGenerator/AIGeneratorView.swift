@@ -167,9 +167,11 @@ struct AIGeneratorView: View {
         let filename = "\(id.uuidString).png"
         
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let iconPath = appSupport.appendingPathComponent("IconSmith/Icons/generated/\(filename)")
+        let iconDir = appSupport.appendingPathComponent("IconSmith/Icons/generated")
+        let iconPath = iconDir.appendingPathComponent(filename)
         
         if let pngData = ICNSConverter.pngData(from: image) {
+            try? FileManager.default.createDirectory(at: iconDir, withIntermediateDirectories: true)
             try? pngData.write(to: iconPath)
             
             let iconFile = IconFile(

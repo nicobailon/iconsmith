@@ -71,8 +71,7 @@ struct PresetListView: View {
     }
     
     private func duplicatePreset(_ preset: Preset) {
-        var newPreset = preset
-        newPreset = Preset(name: "\(preset.name) Copy", mappings: preset.mappings)
+        let newPreset = Preset(name: "\(preset.name) Copy", mappings: preset.mappings)
         appState.presets.append(newPreset)
         appState.saveState()
     }
