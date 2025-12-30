@@ -96,13 +96,25 @@ struct ExtensionGroupSection: View {
     let files: [FileTypeInfo]
     
     @State private var isExpanded = true
+    @State private var showFixSheet = false
     
     var customIconCount: Int {
         files.filter { $0.hasCustomIcon }.count
     }
     
+    var inconsistencyInfo: InconsistencyInfo? {
+        let inconsistencies = appState.detectInconsistencies(in: files)
+        return inconsistencies.first
+    }
+    
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
+            if let info = inconsistencyInfo {
+                InconsistencyAlert(info: info) {
+                    showFixSheet = true
+                }
+            }
+            
             ForEach(files) { file in
                 FileRow(file: file)
                     .tag(file.path)
@@ -116,12 +128,144 @@ struct ExtensionGroupSection: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 
-                if customIconCount > 0 {
+                if let info = inconsistencyInfo {
+                    Label("\(info.differentIconCount) different icons", systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                } else if customIconCount > 0 {
                     Text("\(customIconCount) with custom icons")
                         .font(.caption)
                         .foregroundStyle(.tint)
                 }
             }
+        }
+        .sheet(isPresented: $showFixSheet) {
+            if let info = inconsistencyInfo {
+                FixInconsistencySheet(info: info)
+            }
+        }
+    }
+}
+
+struct InconsistencyAlert: View {
+    let info: InconsistencyInfo
+    let onFix: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(info.outlierFiles.count) files have different icons")
+                    .font(.subheadline.bold())
+                Text("Apply the most common icon to all .\(info.fileExtension) files?")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+            
+            Button("Fix") {
+                onFix()
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+        }
+        .padding(10)
+        .background(.orange.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.vertical, 4)
+    }
+}
+
+struct FixInconsistencySheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var appState: AppState
+    
+    let info: InconsistencyInfo
+    
+    @State private var isApplying = false
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Fix Icon Inconsistency")
+                .font(.title2.bold())
+            
+            HStack(spacing: 20) {
+                VStack {
+                    if let icon = info.dominantIcon {
+                        Image(nsImage: icon)
+                            .resizable()
+                            .frame(width: 64, height: 64)
+                    }
+                    Text("Most common icon")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("\(info.totalFiles - info.outlierFiles.count) files")
+                        .font(.caption2)
+                }
+                
+                Image(systemName: "arrow.right")
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
+                
+                VStack {
+                    Text("\(info.outlierFiles.count)")
+                        .font(.largeTitle.bold())
+                    Text("files to update")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
+            Text("This will apply the most common icon to all .\(info.fileExtension) files that currently have a different icon.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            
+            HStack {
+                Button("Cancel") {
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction)
+                
+                Spacer()
+                
+                Button {
+                    applyFix()
+                } label: {
+                    if isApplying {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Text("Apply to \(info.outlierFiles.count) files")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
+                .disabled(isApplying)
+            }
+        }
+        .padding(24)
+        .frame(width: 400)
+    }
+    
+    private func applyFix() {
+        guard let icon = info.dominantIcon else { return }
+        isApplying = true
+        
+        Task {
+            let urls = info.outlierFiles.map { $0.url }
+            _ = appState.iconService.batchApply(icon: icon, to: urls) { _, _ in }
+            
+            appState.logActivity(ActivityEntry(
+                action: .batchApplied,
+                filePaths: urls.map { $0.path }
+            ))
+            
+            isApplying = false
+            dismiss()
         }
     }
 }

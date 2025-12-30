@@ -124,7 +124,59 @@ final class AppState: ObservableObject {
             recentActivity = Array(recentActivity.prefix(50))
         }
         saveActivity()
+        
+        if let iconID = entry.iconUsed {
+            syncRecentIconToSharedContainer(iconID)
+        }
     }
+    
+    private let sharedContainerID = "group.com.nicobailon.IconSmith"
+    
+    private func syncRecentIconToSharedContainer(_ iconID: UUID) {
+        guard let icon = iconLibrary.icon(for: iconID),
+              let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: sharedContainerID) else {
+            return
+        }
+        
+        try? FileManager.default.createDirectory(at: containerURL.appendingPathComponent("Icons"), withIntermediateDirectories: true)
+        
+        if let image = icon.image, let pngData = ICNSConverter.pngData(from: image) {
+            let iconPath = containerURL.appendingPathComponent("Icons/\(iconID.uuidString).png")
+            try? pngData.write(to: iconPath)
+        }
+        
+        updateRecentIconsFile(icon: icon, containerURL: containerURL)
+    }
+    
+    private func updateRecentIconsFile(icon: IconFile, containerURL: URL) {
+        let recentFile = containerURL.appendingPathComponent("recent-icons.json")
+        var recentIcons: [RecentIconEntry] = []
+        
+        if let data = try? Data(contentsOf: recentFile),
+           let existing = try? JSONDecoder().decode([RecentIconEntry].self, from: data) {
+            recentIcons = existing
+        }
+        
+        recentIcons.removeAll { $0.id == icon.id }
+        
+        let iconPath = containerURL.appendingPathComponent("Icons/\(icon.id.uuidString).png")
+        let entry = RecentIconEntry(id: icon.id, name: icon.name, thumbnailPath: iconPath.path)
+        recentIcons.insert(entry, at: 0)
+        
+        if recentIcons.count > 10 {
+            recentIcons = Array(recentIcons.prefix(10))
+        }
+        
+        if let data = try? JSONEncoder().encode(recentIcons) {
+            try? data.write(to: recentFile)
+        }
+    }
+}
+
+struct RecentIconEntry: Codable {
+    let id: UUID
+    let name: String
+    let thumbnailPath: String
     
     func detectInconsistencies(in files: [FileTypeInfo]) -> [InconsistencyInfo] {
         var results: [InconsistencyInfo] = []
@@ -168,4 +220,12 @@ struct InconsistencyInfo {
     let differentIconCount: Int
     let dominantIcon: NSImage?
     let outlierFiles: [FileTypeInfo]
+}
+
+extension AppState {
+    func fixInconsistency(_ info: InconsistencyInfo) {
+        guard let icon = info.dominantIcon else { return }
+        let urls = info.outlierFiles.map { $0.url }
+        _ = iconService.batchApply(icon: icon, to: urls) { _, _ in }
+    }
 }
