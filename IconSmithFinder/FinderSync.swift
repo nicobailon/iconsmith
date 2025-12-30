@@ -59,8 +59,11 @@ class FinderSync: FIFinderSync {
     @objc func setIconAction(_ sender: AnyObject?) {
         guard let items = FIFinderSyncController.default().selectedItemURLs() else { return }
         
+        var allowed = CharacterSet.urlQueryAllowed
+        allowed.remove(charactersIn: ",")
+        
         let encodedURLs = items
-            .map { $0.absoluteString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "" }
+            .map { $0.absoluteString.addingPercentEncoding(withAllowedCharacters: allowed) ?? "" }
             .joined(separator: ",")
         
         if let appURL = URL(string: "iconsmith://apply?files=\(encodedURLs)") {
