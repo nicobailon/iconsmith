@@ -4,28 +4,6 @@ struct ContentView: View {
     @EnvironmentObject var appState: AppState
     @State private var selectedSection: SidebarSection = .dashboard
     
-    enum SidebarSection: String, CaseIterable, Identifiable {
-        case dashboard = "Dashboard"
-        case folders = "Folders"
-        case library = "Icon Library"
-        case presets = "Presets"
-        case generate = "Generate"
-        case settings = "Settings"
-        
-        var id: String { rawValue }
-        
-        var systemImage: String {
-            switch self {
-            case .dashboard: return "square.grid.2x2"
-            case .folders: return "folder"
-            case .library: return "photo.on.rectangle"
-            case .presets: return "doc.badge.gearshape"
-            case .generate: return "wand.and.stars"
-            case .settings: return "gearshape"
-            }
-        }
-    }
-    
     var body: some View {
         NavigationSplitView {
             List(SidebarSection.allCases, selection: $selectedSection) { section in
@@ -52,6 +30,11 @@ struct ContentView: View {
                 )
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToSection)) { notification in
+            if let section = notification.object as? SidebarSection {
+                selectedSection = section
+            }
+        }
     }
     
     @ViewBuilder
@@ -71,4 +54,31 @@ struct ContentView: View {
             SettingsView()
         }
     }
+}
+
+enum SidebarSection: String, CaseIterable, Identifiable, Sendable {
+    case dashboard = "Dashboard"
+    case folders = "Folders"
+    case library = "Icon Library"
+    case presets = "Presets"
+    case generate = "Generate"
+    case settings = "Settings"
+    
+    var id: String { rawValue }
+    
+    var systemImage: String {
+        switch self {
+        case .dashboard: return "square.grid.2x2"
+        case .folders: return "folder"
+        case .library: return "photo.on.rectangle"
+        case .presets: return "doc.badge.gearshape"
+        case .generate: return "wand.and.stars"
+        case .settings: return "gearshape"
+        }
+    }
+    
+}
+
+extension Notification.Name {
+    static let navigateToSection = Notification.Name("navigateToSection")
 }

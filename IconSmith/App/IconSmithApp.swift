@@ -13,12 +13,61 @@ struct IconSmithApp: App {
                 }
         }
         .commands {
-            CommandGroup(after: .newItem) {
-                Button("Apply Icon to Selection") {
+            CommandGroup(replacing: .newItem) {}
+            
+            CommandGroup(after: .sidebar) {
+                Divider()
+                
+                Button("Dashboard") {
+                    navigateTo(.dashboard)
                 }
-                .keyboardShortcut("i", modifiers: .command)
+                .keyboardShortcut("1", modifiers: .command)
+                
+                Button("Folders") {
+                    navigateTo(.folders)
+                }
+                .keyboardShortcut("2", modifiers: .command)
+                
+                Button("Icon Library") {
+                    navigateTo(.library)
+                }
+                .keyboardShortcut("3", modifiers: .command)
+                
+                Button("Presets") {
+                    navigateTo(.presets)
+                }
+                .keyboardShortcut("4", modifiers: .command)
+                
+                Button("Generate") {
+                    navigateTo(.generate)
+                }
+                .keyboardShortcut("5", modifiers: .command)
+            }
+            
+            CommandGroup(after: .undoRedo) {
+                Button("Undo Last Icon Change") {
+                    _ = appState.undoManager.undo()
+                }
+                .keyboardShortcut("z", modifiers: [.command, .option])
+                .disabled(!appState.undoManager.canUndo)
+            }
+            
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings...") {
+                    navigateTo(.settings)
+                }
+                .keyboardShortcut(",", modifiers: .command)
             }
         }
+        
+        Settings {
+            SettingsView()
+                .environmentObject(appState)
+        }
+    }
+    
+    private func navigateTo(_ section: SidebarSection) {
+        NotificationCenter.default.post(name: .navigateToSection, object: section)
     }
     
     private func handleDeepLink(_ url: URL) {
