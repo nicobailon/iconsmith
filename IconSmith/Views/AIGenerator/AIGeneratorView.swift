@@ -187,18 +187,25 @@ struct AIGeneratorView: View {
     }
     
     private func colorToString(_ color: Color) -> String {
-        let nsColor = NSColor(color)
-        if nsColor.redComponent > 0.8 && nsColor.greenComponent < 0.3 && nsColor.blueComponent < 0.3 {
-            return "red"
-        } else if nsColor.greenComponent > 0.8 && nsColor.redComponent < 0.3 && nsColor.blueComponent < 0.3 {
-            return "green"
-        } else if nsColor.blueComponent > 0.8 && nsColor.redComponent < 0.3 && nsColor.greenComponent < 0.3 {
+        guard let nsColor = NSColor(color).usingColorSpace(.sRGB) else {
             return "blue"
-        } else if nsColor.redComponent > 0.8 && nsColor.greenComponent > 0.8 && nsColor.blueComponent < 0.3 {
+        }
+        
+        let r = nsColor.redComponent
+        let g = nsColor.greenComponent
+        let b = nsColor.blueComponent
+        
+        if r > 0.8 && g < 0.3 && b < 0.3 {
+            return "red"
+        } else if g > 0.8 && r < 0.3 && b < 0.3 {
+            return "green"
+        } else if b > 0.8 && r < 0.3 && g < 0.3 {
+            return "blue"
+        } else if r > 0.8 && g > 0.8 && b < 0.3 {
             return "yellow"
-        } else if nsColor.redComponent > 0.8 && nsColor.greenComponent > 0.4 && nsColor.blueComponent < 0.3 {
+        } else if r > 0.8 && g > 0.4 && b < 0.3 {
             return "orange"
-        } else if nsColor.redComponent > 0.8 && nsColor.blueComponent > 0.8 && nsColor.greenComponent < 0.3 {
+        } else if r > 0.8 && b > 0.8 && g < 0.3 {
             return "purple"
         }
         return "blue"

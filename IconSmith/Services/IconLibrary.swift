@@ -57,6 +57,7 @@ final class IconLibrary: ObservableObject {
         let destinationDir = dataDirectory.appendingPathComponent("Icons/imported", isDirectory: true)
         let destinationURL = destinationDir.appendingPathComponent(filename)
         
+        try FileManager.default.createDirectory(at: destinationDir, withIntermediateDirectories: true)
         try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
         
         let icon = IconFile(
@@ -90,6 +91,7 @@ final class IconLibrary: ObservableObject {
             return nil
         }
         
+        try FileManager.default.createDirectory(at: destinationDir, withIntermediateDirectories: true)
         try pngData.write(to: destinationURL)
         
         let icon = IconFile(

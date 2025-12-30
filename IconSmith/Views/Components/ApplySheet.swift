@@ -87,6 +87,9 @@ struct ApplySheet: View {
         isApplying = true
         
         Task {
+            var allAppliedPaths: [String] = []
+            var lastIconID: UUID?
+            
             for (ext, iconID) in groupedSelection {
                 guard let icon = appState.iconLibrary.icon(for: iconID),
                       let image = icon.image else { continue }
@@ -95,14 +98,18 @@ struct ApplySheet: View {
                 for file in filesToApply {
                     appState.undoManager.saveOriginalIcon(for: file)
                     try? appState.iconService.applyIcon(image, to: file)
+                    allAppliedPaths.append(file.path)
                 }
                 
                 appState.iconLibrary.incrementUsage(for: iconID)
-                
+                lastIconID = iconID
+            }
+            
+            if !allAppliedPaths.isEmpty {
                 appState.logActivity(ActivityEntry(
-                    action: filesToApply.count > 1 ? .batchApplied : .applied,
-                    filePaths: filesToApply.map { $0.path },
-                    iconUsed: iconID
+                    action: allAppliedPaths.count > 1 ? .batchApplied : .applied,
+                    filePaths: allAppliedPaths,
+                    iconUsed: lastIconID
                 ))
             }
             

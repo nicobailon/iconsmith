@@ -118,6 +118,13 @@ final class AppState: ObservableObject {
         saveFolders()
     }
     
+    func cancelCurrentOperation() {
+        if var operation = currentOperation {
+            operation.isCancelled = true
+            currentOperation = operation
+        }
+    }
+    
     func logActivity(_ entry: ActivityEntry) {
         recentActivity.insert(entry, at: 0)
         if recentActivity.count > 50 {

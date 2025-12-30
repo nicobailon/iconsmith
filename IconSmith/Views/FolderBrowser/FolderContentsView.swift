@@ -257,6 +257,11 @@ struct FixInconsistencySheet: View {
         
         Task {
             let urls = info.outlierFiles.map { $0.url }
+            
+            for url in urls {
+                appState.undoManager.saveOriginalIcon(for: url)
+            }
+            
             _ = appState.iconService.batchApply(icon: icon, to: urls) { _, _ in }
             
             appState.logActivity(ActivityEntry(

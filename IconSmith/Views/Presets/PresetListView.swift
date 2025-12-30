@@ -219,6 +219,7 @@ struct PresetEditorView: View {
     private func applyPresetToFolder(_ folderURL: URL) {
         Task {
             let files = await appState.folderScanService.scanFolder(folderURL)
+            var allAppliedPaths: [String] = []
             
             for (ext, iconID) in preset.mappings {
                 guard let icon = appState.iconLibrary.icon(for: iconID),
@@ -226,8 +227,19 @@ struct PresetEditorView: View {
                 
                 let matchingFiles = files.filter { $0.fileExtension == ext }
                 for file in matchingFiles {
+                    appState.undoManager.saveOriginalIcon(for: file.url)
                     try? appState.iconService.applyIcon(image, to: file.url)
+                    allAppliedPaths.append(file.path)
                 }
+                
+                appState.iconLibrary.incrementUsage(for: iconID)
+            }
+            
+            if !allAppliedPaths.isEmpty {
+                appState.logActivity(ActivityEntry(
+                    action: .batchApplied,
+                    filePaths: allAppliedPaths
+                ))
             }
         }
     }

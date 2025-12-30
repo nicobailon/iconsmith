@@ -25,7 +25,7 @@ struct ContentView: View {
                     current: progress.current,
                     total: progress.total,
                     onCancel: {
-                        appState.currentOperation?.isCancelled = true
+                        appState.cancelCurrentOperation()
                     }
                 )
             }
